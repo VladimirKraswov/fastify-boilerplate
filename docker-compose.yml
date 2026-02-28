@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo:7
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: app
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      MONGO_URI: mongodb://mongo:27017/app
+      JWT_ACCESS_SECRET: dev-access-secret
+      JWT_REFRESH_SECRET: dev-refresh-secret
+      COOKIE_SECURE: 'false'
+    depends_on:
+      - mongo
+    volumes:
+      - ./uploads:/app/uploads
+volumes:
+  mongo_data:

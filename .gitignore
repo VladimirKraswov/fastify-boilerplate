@@ -1,0 +1,77 @@
+# Директория сборки
+dist/
+build/
+out/
+
+# Зависимости
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Переменные окружения
+.env
+.env.local
+.env.*.local
+
+# Логи
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+*.log
+
+# Тестовое покрытие
+coverage/
+.nyc_output/
+.vite-plugin-coverage
+
+# Временные файлы
+.tmp/
+temp/
+*.tmp
+*.temp
+
+# Редакторы и IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Файлы, созданные пользователями
+uploads/
+!uploads/.gitkeep
+
+# Генерация клиента
+client/
+!client/.gitkeep
+
+# Миграции (но сами файлы миграций должны быть в репозитории)
+# migrations/*
+
+# Докер
+.docker/
+docker-compose.override.yml
+
+# Прекоммит хуки (если генерируются)
+.husky/_
+.husky/_
+
+# Тестовые артефакты
+test-results/
+junit.xml
+
+# Системные файлы
+.vscode-server
+.vercel
+.env.production
+.env.development
+
+# Кеш тестов
+.vitest
+.cache

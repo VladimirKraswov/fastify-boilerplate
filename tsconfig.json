@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@modules/*": ["modules/*"],
+      "@shared/*": ["shared/*"],
+      "@plugins/*": ["plugins/*"],
+      "@config/*": ["config/*"],
+      "@domain/*": ["domain/*"],
+      "@test/*": ["test/*"]
+    },
+
+    "strict": true,
+    "skipLibCheck": true,
+
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    "noEmitOnError": true
+  },
+  "include": ["src/**/*.ts", "src/types/**/*.d.ts"]
+}

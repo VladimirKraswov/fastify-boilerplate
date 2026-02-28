@@ -1,0 +1,24 @@
+import { Type, type Static } from '@sinclair/typebox';
+
+// Body для создания
+export const {{pascalCase name}}CreateBody = Type.Object({
+  name: Type.String({ minLength: 1, maxLength: 100 }),
+  description: Type.Optional(Type.String({ maxLength: 500 }))
+  // добавьте свои поля
+});
+
+// Body для обновления (все поля опциональны)
+export const {{pascalCase name}}UpdateBody = Type.Partial({{pascalCase name}}CreateBody);
+
+// DTO для ответа (без служебных полей)
+export const {{pascalCase name}}Dto = Type.Object({
+  id: Type.String(),
+  name: Type.String(),
+  description: Type.Optional(Type.String()),
+  createdAt: Type.String({ format: 'date-time' }),
+  updatedAt: Type.String({ format: 'date-time' })
+});
+
+export type {{pascalCase name}}CreateBodyT = Static<typeof {{pascalCase name}}CreateBody>;
+export type {{pascalCase name}}UpdateBodyT = Static<typeof {{pascalCase name}}UpdateBody>;
+export type {{pascalCase name}}DtoT = Static<typeof {{pascalCase name}}Dto>;

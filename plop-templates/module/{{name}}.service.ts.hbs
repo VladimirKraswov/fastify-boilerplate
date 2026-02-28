@@ -1,0 +1,55 @@
+import type { Collection } from 'mongodb';
+import { nanoid } from '@shared/ids.js';
+import { E } from '@shared/http.js';
+import type { {{pascalCase name}}Doc } from './{{name}}.repo.js';
+import type { {{pascalCase name}}CreateBodyT, {{pascalCase name}}UpdateBodyT, {{pascalCase name}}DtoT } from './{{name}}.schemas.js';
+
+// Преобразование документа в DTO
+export function toDto(doc: {{pascalCase name}}Doc): {{pascalCase name}}DtoT {
+  return {
+    id: doc._id,
+    name: doc.name,
+    description: doc.description,
+    createdAt: doc.createdAt.toISOString(),
+    updatedAt: doc.updatedAt.toISOString()
+  };
+}
+
+// Создание записи
+export async function create(
+  col: Collection<{{pascalCase name}}Doc>,
+  data: {{pascalCase name}}CreateBodyT,
+  ownerId: string
+): Promise<{{pascalCase name}}Doc> {
+  const now = new Date();
+  const doc: {{pascalCase name}}Doc = {
+    _id: nanoid(),
+    ...data,
+    ownerId,
+    createdAt: now,
+    updatedAt: now
+  };
+  await col.insertOne(doc);
+  return doc;
+}
+
+// Обновление записи
+export async function update(
+  col: Collection<{{pascalCase name}}Doc>,
+  id: string,
+  data: {{pascalCase name}}UpdateBodyT
+): Promise<{{pascalCase name}}Doc> {
+  const result = await col.findOneAndUpdate(
+    { _id: id },
+    { $set: { ...data, updatedAt: new Date() } },
+    { returnDocument: 'after' }
+  );
+  if (!result) throw E.notFound();
+  return result;
+}
+
+// Удаление записи
+export async function remove(col: Collection<{{pascalCase name}}Doc>, id: string): Promise<void> {
+  const result = await col.deleteOne({ _id: id });
+  if (result.deletedCount === 0) throw E.notFound();
+}

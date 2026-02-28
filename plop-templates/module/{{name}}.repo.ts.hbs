@@ -1,0 +1,15 @@
+import type { Collection, Db } from 'mongodb';
+
+// Документ в MongoDB
+export type {{pascalCase name}}Doc = {
+  _id: string;
+  name: string;
+  description?: string;
+  ownerId: string; // кто создал
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export function {{camelCase name}}Col(db: Db): Collection<{{pascalCase name}}Doc> {
+  return db.collection<{{pascalCase name}}Doc>('{{name}}');
+}

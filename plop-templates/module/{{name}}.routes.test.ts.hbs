@@ -1,0 +1,105 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { buildTestApp, createTestCtx } from '@test/test-env.js';
+import { setTestEnv } from '@test/helpers.js';
+
+describe('{{name}} module', () => {
+  let ctx: Awaited<ReturnType<typeof createTestCtx>>;
+  let app: Awaited<ReturnType<typeof buildTestApp>>;
+  let accessToken: string;
+  let createdId: string;
+
+  beforeAll(async () => {
+    ctx = await createTestCtx();
+    setTestEnv({ mongoUri: ctx.mongod.getUri(), uploadDir: ctx.uploadDir });
+    app = await buildTestApp();
+
+    // регистрируем пользователя с ролью admin (или выдаём права)
+    const registerRes = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: { email: 'admin@test.com', password: 'password123' }
+    });
+    expect(registerRes.statusCode).toBe(200);
+
+    // здесь нужно выдать роль admin (прямо в БД)
+    const usersCol = app.db.collection('users');
+    await usersCol.updateOne({ email: 'admin@test.com' }, { $set: { roles: ['admin'] } });
+
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { email: 'admin@test.com', password: 'password123' },
+      headers: { 'x-auth-mode': 'token' }
+    });
+    accessToken = loginRes.json().accessToken;
+  });
+
+  afterAll(async () => {
+    if (app) await app.close();
+    if (ctx) await ctx.close();
+  });
+
+  it('should create a {{name}}', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/{{name}}',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { name: 'Test Item', description: 'Test Description' }
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.item).toHaveProperty('id');
+    expect(body.item.name).toBe('Test Item');
+    createdId = body.item.id;
+  });
+
+  it('should get list of {{name}}', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/{{name}}',
+      headers: { authorization: `Bearer ${accessToken}` }
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body.items)).toBe(true);
+    expect(body.total).toBeGreaterThan(0);
+  });
+
+  it('should get one {{name}}', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/{{name}}/${createdId}`,
+      headers: { authorization: `Bearer ${accessToken}` }
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().item.id).toBe(createdId);
+  });
+
+  it('should update {{name}}', async () => {
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/v1/{{name}}/${createdId}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { name: 'Updated Name' }
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().item.name).toBe('Updated Name');
+  });
+
+  it('should delete {{name}}', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/v1/{{name}}/${createdId}`,
+      headers: { authorization: `Bearer ${accessToken}` }
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().ok).toBe(true);
+
+    const getRes = await app.inject({
+      method: 'GET',
+      url: `/v1/{{name}}/${createdId}`,
+      headers: { authorization: `Bearer ${accessToken}` }
+    });
+    expect(getRes.statusCode).toBe(404);
+  });
+});

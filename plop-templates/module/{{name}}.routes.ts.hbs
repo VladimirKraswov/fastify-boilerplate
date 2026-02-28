@@ -1,0 +1,152 @@
+import { Type } from '@sinclair/typebox';
+import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+
+import { E } from '@shared/http.js';
+import { ErrorResponse } from '@shared/openapi.js';
+import { Permissions } from '@domain/permissions.js';
+
+import { {{pascalCase name}}CreateBody, {{pascalCase name}}UpdateBody, {{pascalCase name}}Dto } from './{{name}}.schemas.js';
+import { {{camelCase name}}Col } from './{{name}}.repo.js';
+import * as {{camelCase name}}Service from './{{name}}.service.js';
+
+const plugin: FastifyPluginAsyncTypebox = async (app) => {
+  // GET / — список
+  app.get(
+    '/',
+    {
+      preHandler: [app.requirePerm(Permissions.Admin)],
+      schema: {
+        tags: ['{{name}}'],
+        security: [{ bearerAuth: [] }],
+        querystring: Type.Object({
+          limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 20 })),
+          offset: Type.Optional(Type.Integer({ minimum: 0, default: 0 }))
+        }),
+        response: {
+          200: Type.Object({
+            items: Type.Array({{pascalCase name}}Dto),
+            total: Type.Integer()
+          }),
+          401: ErrorResponse,
+          403: ErrorResponse
+        }
+      }
+    },
+    async (req) => {
+      const col = {{camelCase name}}Col(app.db);
+      const { limit = 20, offset = 0 } = req.query;
+
+      const [items, total] = await Promise.all([
+        col.find({}).skip(offset).limit(limit).toArray(),
+        col.countDocuments({})
+      ]);
+
+      return {
+        items: items.map((doc) => {{camelCase name}}Service.toDto(doc)),
+        total
+      };
+    }
+  );
+
+  // GET /:id — получение одного
+  app.get<{ Params: { id: string } }>(
+    '/:id',
+    {
+      preHandler: [app.requirePerm(Permissions.Admin)],
+      schema: {
+        tags: ['{{name}}'],
+        security: [{ bearerAuth: [] }],
+        params: Type.Object({ id: Type.String() }),
+        response: {
+          200: Type.Object({ item: {{pascalCase name}}Dto }),
+          401: ErrorResponse,
+          403: ErrorResponse,
+          404: ErrorResponse
+        }
+      }
+    },
+    async (req) => {
+      const col = {{camelCase name}}Col(app.db);
+      const doc = await col.findOne({ _id: req.params.id });
+      if (!doc) throw E.notFound();
+
+      return { item: {{camelCase name}}Service.toDto(doc) };
+    }
+  );
+
+  // POST / — создание
+  app.post<{ Body: Static<typeof {{pascalCase name}}CreateBody> }>(
+    '/',
+    {
+      preHandler: [app.requirePerm(Permissions.Admin)],
+      schema: {
+        tags: ['{{name}}'],
+        security: [{ bearerAuth: [] }],
+        body: {{pascalCase name}}CreateBody,
+        response: {
+          200: Type.Object({ item: {{pascalCase name}}Dto }),
+          400: ErrorResponse,
+          401: ErrorResponse,
+          403: ErrorResponse
+        }
+      }
+    },
+    async (req) => {
+      const col = {{camelCase name}}Col(app.db);
+      const doc = await {{camelCase name}}Service.create(col, req.body, req.auth!.userId);
+      return { item: {{camelCase name}}Service.toDto(doc) };
+    }
+  );
+
+  // PUT /:id — обновление
+  app.put<{ Params: { id: string }; Body: Static<typeof {{pascalCase name}}UpdateBody> }>(
+    '/:id',
+    {
+      preHandler: [app.requirePerm(Permissions.Admin)],
+      schema: {
+        tags: ['{{name}}'],
+        security: [{ bearerAuth: [] }],
+        params: Type.Object({ id: Type.String() }),
+        body: {{pascalCase name}}UpdateBody,
+        response: {
+          200: Type.Object({ item: {{pascalCase name}}Dto }),
+          400: ErrorResponse,
+          401: ErrorResponse,
+          403: ErrorResponse,
+          404: ErrorResponse
+        }
+      }
+    },
+    async (req) => {
+      const col = {{camelCase name}}Col(app.db);
+      const doc = await {{camelCase name}}Service.update(col, req.params.id, req.body);
+      return { item: {{camelCase name}}Service.toDto(doc) };
+    }
+  );
+
+  // DELETE /:id — удаление
+  app.delete<{ Params: { id: string } }>(
+    '/:id',
+    {
+      preHandler: [app.requirePerm(Permissions.Admin)],
+      schema: {
+        tags: ['{{name}}'],
+        security: [{ bearerAuth: [] }],
+        params: Type.Object({ id: Type.String() }),
+        response: {
+          200: Type.Object({ ok: Type.Boolean() }),
+          401: ErrorResponse,
+          403: ErrorResponse,
+          404: ErrorResponse
+        }
+      }
+    },
+    async (req) => {
+      const col = {{camelCase name}}Col(app.db);
+      await {{camelCase name}}Service.remove(col, req.params.id);
+      return { ok: true };
+    }
+  );
+};
+
+export default plugin;
